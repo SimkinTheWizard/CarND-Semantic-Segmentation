@@ -41,6 +41,12 @@ def load_vgg(sess, vgg_path):
     layer3_out = graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
     layer4_out = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
     layer7_out = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
+
+    # freeze layers in order to preserve memory
+    # suggestions by slack user @ladrians
+    #layer7_out = tf.stop_gradient(layer7_out)
+    #layer4_out = tf.stop_gradient(layer4_out)
+    #layer3_out = tf.stop_gradient(layer3_out)
     
     return input_layer, keep, layer3_out, layer4_out, layer7_out
 tests.test_load_vgg(load_vgg, tf)
