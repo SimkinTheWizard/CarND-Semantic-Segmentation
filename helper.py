@@ -6,6 +6,7 @@ import scipy.misc
 import shutil
 import zipfile
 import time
+import ssl
 import tensorflow as tf
 from glob import glob
 from urllib.request import urlretrieve
@@ -42,6 +43,7 @@ def maybe_download_pretrained_vgg(data_dir):
 
         # Download vgg
         print('Downloading pre-trained vgg model...')
+        gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
             urlretrieve(
                 'https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip',
@@ -51,6 +53,7 @@ def maybe_download_pretrained_vgg(data_dir):
         # Extract vgg
         print('Extracting model...')
         zip_ref = zipfile.ZipFile(os.path.join(vgg_path, vgg_filename), 'r')
+        print(data_dir)
         zip_ref.extractall(data_dir)
         zip_ref.close()
 
@@ -71,17 +74,29 @@ def gen_batch_function(data_folder, image_shape):
         :param batch_size: Batch Size
         :return: Batches of training data
         """
-        image_paths = glob(os.path.join(data_folder, 'image_2', '*.png'))
-        label_paths = {
-            re.sub(r'_(lane|road)_', '_', os.path.basename(path)): path
-            for path in glob(os.path.join(data_folder, 'gt_image_2', '*_road_*.png'))}
-        background_color = np.array([255, 0, 0])
+        #image_paths = glob(os.path.join(data_folder, 'image_2', '*.png'))
+        image_paths = glob(os.path.join(data_folder, 'augmented_image', '*.png'))
 
+        label_paths = {
+            #re.sub(r'_(lane|road)_', '_', os.path.basename(path)): path
+            #image_2_original_uu_000097.png_cc2cd79e-c32c-4714-8922-e12a96fe08f8.png
+            #_groundtruth_(1)_image_2_uu_000097.png_cc2cd79e-c32c-4714-8922-e12a96fe08f8.png
+
+            #image_2_original_uu_000056.png_1b674e7c-7936-4ec0-8b08-d8435a3e4927.png
+            #image_2_original_um_000030.png_a6b7a951-efdc-4878-89b9-9f9cdd70a488.png
+            re.sub(r'_groundtruth_\(1\)_image_2_', 'image_2_original_', os.path.basename(path)): path
+            for path in glob(os.path.join(data_folder, 'gt_augmented_image', '*.png'))}
+            #for path in glob(os.path.join(data_folder, 'gt_image_2', '*_road_*.png'))}
+            #for path in glob(os.path.join(data_folder, 'gt_augmented_image', '_groundtruth_(1)_image_2_*.png'))}
+        background_color = np.array([255, 0, 0])
+        #print (label_paths.keys())
         random.shuffle(image_paths)
         for batch_i in range(0, len(image_paths), batch_size):
             images = []
             gt_images = []
             for image_file in image_paths[batch_i:batch_i+batch_size]:
+                #print(image_file)
+                #gt_image_file = label_paths[os.path.basename(image_file)]
                 gt_image_file = label_paths[os.path.basename(image_file)]
 
                 image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
