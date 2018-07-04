@@ -42,11 +42,7 @@ def load_vgg(sess, vgg_path):
     layer4_out = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
     layer7_out = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
 
-    # freeze layers in order to preserve memory
-    # suggestions by slack user @ladrians
-    #layer7_out = tf.stop_gradient(layer7_out)
-    #layer4_out = tf.stop_gradient(layer4_out)
-    #layer3_out = tf.stop_gradient(layer3_out)
+
     
     return input_layer, keep, layer3_out, layer4_out, layer7_out
 tests.test_load_vgg(load_vgg, tf)
@@ -66,12 +62,23 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv1x1 = tf.layers.conv2d(vgg_layer7_out,num_classes,[1,1],padding='same',
                                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3)
                                )
+
     upsample = tf.layers.conv2d_transpose(conv1x1,num_classes,4,2,padding='same',
                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3)
                                          )
+    # skip connections
+    vgg_layer4_out = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, strides=(1, 1),
+                                      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    upsample = tf.add(upsample,vgg_layer4_out)
+
     upsample2 = tf.layers.conv2d_transpose(upsample,num_classes,4,2,padding='same',
                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3)
-                                         )
+                                           )
+    # skip connections
+    vgg_layer3_out = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, strides=(1, 1),
+                                      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    upsample2 = tf.add(upsample2,vgg_layer3_out)
+
     upsample3 = tf.layers.conv2d_transpose(upsample2,num_classes,16,8,padding='same',
                                kernel_regularizer = tf.contrib.layers.l2_regularizer(1e-3)
                                          )
@@ -117,19 +124,21 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
 
     for epoch in range(epochs):
-
+        print("--------------------------")
+        print("Epoch : " + str(epoch))
         for image,label in get_batches_fn(batch_size):
             accuracy, cost = sess.run([train_op, cross_entropy_loss],
-                     feed_dict={input_image: image, correct_label : label, keep_prob: 0.8, learning_rate : 0.0001})
-        print("epoch : " + str(epoch)+ "  cost :" + str(cost))
+                     feed_dict={input_image: image, correct_label : label, keep_prob: 0.7, learning_rate : 0.00001})
+        print("loss :" + str(cost))
+        print("--------------------------")
     pass
 tests.test_train_nn(train_nn)
 
 
 def run():
     num_classes = 2
-    epochs = 50
-    batch_size = 1
+    epochs = 300
+    batch_size = 5
     #keep_prob = 0.8
     learning_rate = 0.001
     image_shape = (160, 576)
@@ -163,6 +172,11 @@ def run():
 
         # TODO: Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess,vgg_path)
+        # freeze layers in order to preserve memory
+        # suggestions by slack user @ladrians
+        layer3_out = tf.stop_gradient(layer3_out)
+        layer4_out = tf.stop_gradient(layer4_out)
+        layer7_out = tf.stop_gradient(layer7_out)
 
         decoder_layer = layers(layer3_out,layer4_out,layer7_out,num_classes)
         logits, train_op, cross_entropy_loss = optimize(decoder_layer, correct_label, learning_rate, num_classes)
