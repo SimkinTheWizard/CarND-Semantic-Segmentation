@@ -128,7 +128,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
         print("Epoch : " + str(epoch))
         for image,label in get_batches_fn(batch_size):
             accuracy, cost = sess.run([train_op, cross_entropy_loss],
-                     feed_dict={input_image: image, correct_label : label, keep_prob: 0.7, learning_rate : 0.00001})
+                     feed_dict={input_image: image, correct_label : label, keep_prob: 0.3, learning_rate : 0.0009})
         print("loss :" + str(cost))
         print("--------------------------")
     pass
@@ -137,8 +137,8 @@ tests.test_train_nn(train_nn)
 
 def run():
     num_classes = 2
-    epochs = 300
-    batch_size = 5
+    epochs = 150
+    batch_size = 20
     #keep_prob = 0.8
     learning_rate = 0.001
     image_shape = (160, 576)
@@ -174,9 +174,9 @@ def run():
         input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess,vgg_path)
         # freeze layers in order to preserve memory
         # suggestions by slack user @ladrians
-        layer3_out = tf.stop_gradient(layer3_out)
-        layer4_out = tf.stop_gradient(layer4_out)
-        layer7_out = tf.stop_gradient(layer7_out)
+        #layer3_out = tf.stop_gradient(layer3_out)
+        #layer4_out = tf.stop_gradient(layer4_out)
+        #layer7_out = tf.stop_gradient(layer7_out)
 
         decoder_layer = layers(layer3_out,layer4_out,layer7_out,num_classes)
         logits, train_op, cross_entropy_loss = optimize(decoder_layer, correct_label, learning_rate, num_classes)
