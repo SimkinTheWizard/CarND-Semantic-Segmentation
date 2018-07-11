@@ -1,4 +1,4 @@
-#Self Driving Car Nanodegree Project - 12 : Semantic Segmentation
+# Self Driving Car Nanodegree Project - 12 : Semantic Segmentation
 
 ## Model
 
@@ -24,4 +24,4 @@ I begin with a relatively high learning rate (0.0005) and keep probability (0.8)
 ## Results
 
 The results of the best run is given in the combined gif below.
-![alt text](./best_run.gif "The result of the best run")
+![(The gif takes a while to load. Please download to see it.)](./best_run.gif "The result of the best run")
